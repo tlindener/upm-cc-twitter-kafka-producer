@@ -50,8 +50,10 @@ public class TwitterApp {
 					if (status != null) {
 						if (status.getEntities() != null) {
 							for (Hashtag e : status.getEntities().getHashtags()) {
-								producer.send(new ProducerRecord<String, String>(status.getLang(),
+								if(status.getLang() != null){
+								producer.send(new ProducerRecord<String, String>(status.getLang().toLowerCase(),
 										e.getText()));
+								}
 							}
 						}
 					}
