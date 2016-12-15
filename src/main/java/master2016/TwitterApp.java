@@ -66,8 +66,10 @@ public class TwitterApp {
 	private static void loadTweetsFromStreamingAPI(String apiKey, String apiSecret, String tokenValue,
 			String tokenSecret, String kafkaBrokerUrl) throws IOException {
 		System.out.println("Load tweets from api. Broker url is: " + kafkaBrokerUrl);
+		
+		
 		final KafkaProducer<String, String> producer = createKafkaProducer(kafkaBrokerUrl);
-
+		// Instantiate Twitter4J API
 		StatusListener listener = new StatusListener() {
 
 			@Override
@@ -125,6 +127,7 @@ public class TwitterApp {
 	}
 
 	private static KafkaProducer<String, String> createKafkaProducer(String url) throws IOException {
+		//Create KafkaProducer from Zookeeper data
 	System.out.println("ZookeeperUrl: " +url);
 		final KafkaProducer<String, String> producer;
 		ZooKeeper zk = new ZooKeeper(url, 10000, null);
@@ -157,8 +160,18 @@ public class TwitterApp {
 	}
 
 	public static void main(String[] args) throws IOException {
+		System.out.println("Remember to use zookeeperUrl instead of kafkaUrl!");
+		if(args.length < 7 )
+		{
+			System.out.println("Parameters missing. Use following definition");
+			System.out.println("mode apiKey apiSecret tokenValue tokenSecret zookeeperUrl twitterFilePath");
+		}
+		
 		int mode = 1;
-		Integer.parseInt(args[0]);
+		try{
+		 mode = Integer.parseInt(args[0]);}catch(Exception ex){
+			
+		}
 		String apiKey = args[1];
 		String apiSecret = args[2];
 		String tokenValue = args[3];
