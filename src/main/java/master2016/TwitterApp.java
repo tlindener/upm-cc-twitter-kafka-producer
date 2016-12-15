@@ -24,6 +24,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import kafka.cluster.Broker;
+import master2016.models.Hashtag;
+import master2016.models.Tweet;
 import twitter4j.FilterQuery;
 import twitter4j.HashtagEntity;
 import twitter4j.StallWarning;
@@ -75,7 +77,7 @@ public class TwitterApp {
 			@Override
 			public void onStatus(Status status) {
 
-				// send lots of messages
+				// send hashtag from each tweet on the kafka topic of the tweets language (e.g. "es")
 				for (HashtagEntity e : status.getHashtagEntities()) {
 					producer.send(new ProducerRecord<String, String>(status.getLang(), e.getText()));
 				}
@@ -84,20 +86,17 @@ public class TwitterApp {
 
 			@Override
 			public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-				// System.out.println("Got a status deletion notice id:" +
-				// statusDeletionNotice.getStatusId());
+				// No action necessary
 			}
 
 			@Override
 			public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-				// System.out.println("Got track limitation notice:" +
-				// numberOfLimitedStatuses);
+				// No action necessary	
 			}
 
 			@Override
 			public void onScrubGeo(long userId, long upToStatusId) {
-				// System.out.println("Got scrub_geo event userId:" + userId + "
-				// upToStatusId:" + upToStatusId);
+				// No action necessary
 			}
 
 			@Override
@@ -107,8 +106,7 @@ public class TwitterApp {
 
 			@Override
 			public void onException(Exception ex) {
-				ex.printStackTrace();
-				// producer.close();
+				//appears often - requirement for exception handling undefined
 			}
 
 		};
@@ -119,10 +117,12 @@ public class TwitterApp {
 		twitterStream.addListener(listener);
 		twitterStream.setOAuthConsumer(apiKey, apiSecret);
 		twitterStream.setOAuthAccessToken(accessToken);
-		FilterQuery filtre = new FilterQuery();
+		
+		//set query filter to find lots of tweets (better than twitterStream.sample()
+		FilterQuery filter = new FilterQuery();
 		String[] keywordsArray = { "trump", "clinton" };
-		filtre.track(keywordsArray);
-		twitterStream.filter(filtre);
+		filter.track(keywordsArray);
+		twitterStream.filter(filter);
 
 	}
 
@@ -179,6 +179,7 @@ public class TwitterApp {
 		String kafkaBrokerUrl = args[5];
 		String twitterFilePath = args[6];
 
+		//depending on mode of usage use either twitter file or api
 		switch (mode) {
 		case 1:
 			loadTweetsFromFile(twitterFilePath, kafkaBrokerUrl);

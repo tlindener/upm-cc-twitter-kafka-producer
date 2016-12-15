@@ -1,5 +1,5 @@
 
-package master2016;
+package master2016.models;
 
 import java.util.HashMap;
 import java.util.Map;
