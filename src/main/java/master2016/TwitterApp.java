@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.protocol.SecurityProtocol;
@@ -36,6 +37,7 @@ import twitter4j.auth.AccessToken;
 public class TwitterApp {
 
 	private static void loadTweetsFromFile(String filePath, String kafkaBrokerUrl) throws IOException {
+		System.out.println("Load tweets from file. Broker url is: " + kafkaBrokerUrl);
 		final KafkaProducer<String, String> producer = createKafkaProducer(kafkaBrokerUrl);
 		ObjectMapper mapper = new ObjectMapper();
 		try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -46,7 +48,7 @@ public class TwitterApp {
 					if (status != null) {
 						if (status.getEntities() != null) {
 							for (Hashtag e : status.getEntities().getHashtags()) {
-								producer.send(new ProducerRecord<String, String>("hashtags-" + status.getLang(),
+								producer.send(new ProducerRecord<String, String>(status.getLang(),
 										e.getText()));
 							}
 						}
@@ -63,7 +65,7 @@ public class TwitterApp {
 
 	private static void loadTweetsFromStreamingAPI(String apiKey, String apiSecret, String tokenValue,
 			String tokenSecret, String kafkaBrokerUrl) throws IOException {
-
+		System.out.println("Load tweets from api. Broker url is: " + kafkaBrokerUrl);
 		final KafkaProducer<String, String> producer = createKafkaProducer(kafkaBrokerUrl);
 
 		StatusListener listener = new StatusListener() {
@@ -73,7 +75,7 @@ public class TwitterApp {
 
 				// send lots of messages
 				for (HashtagEntity e : status.getHashtagEntities()) {
-					producer.send(new ProducerRecord<String, String>("hashtags-" + status.getLang(), e.getText()));
+					producer.send(new ProducerRecord<String, String>(status.getLang(), e.getText()));
 				}
 
 			}
@@ -123,6 +125,7 @@ public class TwitterApp {
 	}
 
 	private static KafkaProducer<String, String> createKafkaProducer(String url) throws IOException {
+	System.out.println("ZookeeperUrl: " +url);
 		final KafkaProducer<String, String> producer;
 		ZooKeeper zk = new ZooKeeper(url, 10000, null);
 		List<String> brokerList = new ArrayList<String>();
@@ -147,7 +150,7 @@ public class TwitterApp {
 		Properties properties = new Properties();
 		properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 		properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-		properties.put("bootstrap.servers", String.join(",", brokerList));
+		properties.put("bootstrap.servers", StringUtils.join(brokerList, ","));
 		producer = new KafkaProducer<>(properties);
 		return producer;
 
