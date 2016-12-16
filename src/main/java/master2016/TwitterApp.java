@@ -32,6 +32,8 @@ import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
 import twitter4j.StatusListener;
+import twitter4j.TwitterException;
+import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.auth.AccessToken;
@@ -46,19 +48,17 @@ public class TwitterApp {
 			for (String line; (line = br.readLine()) != null;) {
 				// JSON from String to Object
 				try {
-					Tweet status = mapper.readValue(line, Tweet.class);
+					Status status = TwitterObjectFactory.createStatus(line);
 					if (status != null) {
-						if (status.getEntities() != null) {
-							for (Hashtag e : status.getEntities().getHashtags()) {
-								if(status.getLang() != null){
-								producer.send(new ProducerRecord<String, String>(status.getLang().toLowerCase(),
-										e.getText()));
-								}
-							}
+						// send hashtag from each tweet on the kafka topic of the tweets language (e.g. "es")
+						for (HashtagEntity e : status.getHashtagEntities()) {
+							producer.send(new ProducerRecord<String, String>(status.getLang(), e.getText()));
 						}
+						
 					}
-				} catch (JsonParseException ex) {
-
+				}  catch (TwitterException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
 
 			}
